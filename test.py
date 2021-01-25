@@ -1,4 +1,6 @@
 import numpy as np
 a=4
-b=6
+c=6
+b=11
 print(a+b)
+print(b+c == 19)
