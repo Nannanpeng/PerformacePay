@@ -2,7 +2,7 @@ import numpy as np
 from utilities import Utility
 from scipy import optimize
 
-print(3)
+
 def LastPeriodUtility(a, transfer, params):
     return a*params["r"] + transfer
 
@@ -12,7 +12,7 @@ def RetiredUtility(a, c, NextUtilityFun, UtilityParams, transfer, params):
     r = params["r"]
     a_prime = a*(1+r) - c + transfer
     next_utility = NextUtilityFun(a_prime)
-    total_utility = Utility(c) + beta*next_utility
+    total_utility = Utility(c) + beta*next_utility # need more arguments for Utility function
     return total_utility
 
 
@@ -23,9 +23,21 @@ def RetiredOptimalConsumption(a, ReUtility, NextUtilityFun, UtilityParams, trans
     return consumption, utility
 
 
-def f(x):
-    return x**2
+# no work
+def LastWorkingPeriodUtility(a, c, NextUtilityFun, UtilityParams, transfer, params):
+    beta = UtilityParams["beta"]
+    b = params["b"]
+    r = params["r"]
+    a_prime = a*(1 + r) + transfer - c
+    total_utility = Utility(c, 0, UtilityParams) + b + beta*NextUtilityFun(a_prime)
+    return total_utility
 
 
-outputs = optimize.brent(f, brack=(1, 2), full_output=True)
-print(outputs)
+# No work
+def LastWorkingPeriodConsumption(a, b, ThisUtility, NextUtilityFun, UtilityParams, transfer, params):
+    ThisUtilityFun = lambda c: ThisUtility(a, c, NextUtilityFun, UtilityParams, transfer, params)
+    consumption, utility, _, _ = optimize.brent(ThisUtilityFun, brack=(0, a), full_output=True)
+    return consumption, utility
+
+ 
+
