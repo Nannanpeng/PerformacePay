@@ -1,21 +1,29 @@
 # This script includes all the preference functions,
 # like utility, human capital accumulation and so on.
 
-def Utility(c, l, params):
-    ChiC = params["ChiCon"]
-    ChiL = params["ChiLabor"]
-    phi = params["phi"]
-    tao = params["tao"]
-    ConUtility = ChiC*c**(1-tao)/(1-tao)
-    LaborUtility = ChiL*l**(1+phi)/(1+phi)
-    return ConUtility - LaborUtility
+# jitable
+def ConUtility(c, ChiC, iota):
+    con_utility = ChiC*c**(1-iota)/(1-iota)
+    return con_utility
 
 
-def HumanCapitalAccu(h, l, params):
-    GammaL = params["GammaL"]
-    GammaH = params["GammaH"]
-    A = params["A"]
-    Xi = params["Xi"]
-    left = A*l**GammaL*h**GammaH
-    right = (1 - Xi)*h
-    return left - right
+# jitable
+def LabUtility(labor, ChiL, psi):
+    labor_utility = ChiL*labor**(1+psi)/(1+psi)
+    return labor_utility
+
+
+# jitable
+def TotUtility(c, labor, *args):
+    ChiC, iota, ChiL, psi = args
+    con_utility = ConUtility(c, ChiC, iota)
+    lab_utility = LabUtility(labor, ChiL, psi)
+    return con_utility - lab_utility
+
+
+# jitable
+def HumanCapitalAccu(h, labor, *args):
+    A, GammaL, GammaH, Xi = args
+    accu = A*labor**GammaL*h**GammaH
+    remaining = (1 - Xi)*h
+    return accu + remaining
