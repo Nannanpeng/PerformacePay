@@ -56,15 +56,42 @@ def gradLogPosterior(theta, args):
     return -dlogpdtheta
 
 
-def Prediction(states, args):
-    data, t = args
-    best_theta = opt.fmin_cg(logPosterior, np.array([4, -2]),
-                            fprime=gradLogPosterior, args=[(data, t)], disp=1)
+def getDerivative(data, state, params):
+    params = np.squeeze(params)
+    coeff = -np.exp(params[1])
+    if data.shape[1] == 1:
+        return coeff*(state - data)
+    else:
+        return coeff*(state[0] - data[:, 0].reshape((-1, 1)))
+
+
+def _Help_Prediction(training_set, method=2):
+    data, t = training_set
+    if method == 1:
+        best_theta = opt.fmin_cg(logPosterior, np.array([0, 0]),
+                                fprime=gradLogPosterior, args=[(data, t)], disp=1)
+    elif method == 2:
+        output = opt.minimize(logPosterior, np.array([0, 0]), args=([data, t]),
+                             jac=gradLogPosterior, method='L-BFGS-B')
+        if not output.success:
+            msg = "Iteration failed: check the optimization for hyperparameters."
+            raise ValueError(msg)
+        best_theta = output.x
     K = kernel(data, data, best_theta)
     L = np.linalg.cholesky(K)
-    beta = np.linalg.solve(L.T, np.linalg.solve(L, t))
-    predictions = np.zeros(len(states))
-    for i, state in enumerate(states):
-        kstar = kernel(data, state, best_theta)
-        predictions[i] = np.dot(kstar.T, beta)
-    return predictions
+    coeff = np.linalg.solve(L.T, np.linalg.solve(L, t))
+    return coeff, best_theta
+
+
+def Prediction(state, traning_set, coeff, theta,  wantderiv=False):
+    data, _ = traning_set
+    kstar = kernel(data, state, theta)
+    mean = np.dot(kstar.T, coeff)
+    if wantderiv:
+        prediction = np.zeros((2, 1), dtype=np.float64)
+        prediction[0] = mean
+        kstarderiv = getDerivative(data, state, theta) * kstar
+        prediction[1] = np.dot(kstarderiv.T, coeff)
+    else:
+        prediction = mean
+    return prediction
