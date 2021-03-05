@@ -1,5 +1,5 @@
 # This file solves retired problem 
-from utilities import ConUtility
+from pycode.utilities import ConUtility
 import numpy as np
 from interpolation import interp
 import matplotlib.pyplot as plt
@@ -15,7 +15,7 @@ def LastPeriodUtility(a, ChiC, iota, r, transfer=0.0):
 
 
 @njit
-def ufun(a_, a_grids, u_grids):
+def InterpUfun(a_, a_grids, u_grids):
     u_ = interp(a_grids, u_grids, a_)
     return u_
 
@@ -23,7 +23,7 @@ def ufun(a_, a_grids, u_grids):
 @njit
 def RetiredUtility(c, a, a_grids, u_grids, ChiC, iota, r, beta, transfer=0.0):
     a_prime = a*(1+r) - c + transfer
-    next_utility = ufun(a_prime, a_grids, u_grids)
+    next_utility = InterpUfun(a_prime, a_grids, u_grids)
     total_utility = ConUtility(c, ChiC, iota) + beta*next_utility
     return total_utility
 
@@ -35,13 +35,15 @@ def RetiredOptimalCon(a, a_grids, u_grids, ChiC, iota, r, beta, B, transfer=0.0)
     return consumption, utility
 
 
-# Solve retired problem
-def Solver(a, *args, TotPeriod=5, verbose=False):
-    ChiC, iota, r, beta, B = args
+# Solve retired problem 
+# note: need to add transfer
+def RetiredSolver(a, Uparams, Bparams, retired_length):
+    ChiC, iota, beta, _, _ = Uparams
+    r, B, _ = Bparams
     utility = LastPeriodUtility(a, ChiC, iota, r)
-    store_utility = np.full((TotPeriod, len(a)), np.nan)
-    store_consum = np.full((TotPeriod, len(a)), np.nan)
-    for i in range(TotPeriod):
+    store_utility = np.full((retired_length, len(a)), np.nan)
+    store_consum = np.full((retired_length, len(a)), np.nan)
+    for i in range(retired_length):
         for j in range(len(a)):
             asset = a[j]
             c, u = RetiredOptimalCon(asset, a, utility, ChiC, iota, r, beta, B)
